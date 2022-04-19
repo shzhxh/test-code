@@ -2,19 +2,28 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-int main()
-{
-    /* read from uart, write to uart */
-    char *uart_name = "/dev/ttySIF0";
-    int fd = open(uart_name, O_RDWR);
-    if (fd < 0)
-    {
+void usage(void){
+    fprintf(stderr, "Usage :\n  uart $serial_dev\n");
+    exit(1);
+}
+
+/* read from uart, write to uart */
+int main(int argc, char* argv[]){
+    char *uart_name;
+    int fd; // uart fd
+    char buf[256];
+
+    if (argc != 2){
+        usage();
+    }
+    uart_name = argv[1];
+
+    fd = open(uart_name, O_RDWR);
+    if (fd < 0) {
         printf("failed to open %s: %d\n", uart_name, fd);
         return -1;
     }
-
-
-    char buf[256];
+    
     while (1)
     {
         unsigned long len = read(fd, buf, sizeof(buf));
@@ -39,6 +48,7 @@ int main()
                 else
                 {
                     printf("serial closed\n");
+                    close(fd);
                     return 0;
                 }
                 write(fd, buf + i, 1);
