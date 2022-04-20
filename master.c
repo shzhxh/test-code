@@ -45,7 +45,7 @@ void net_test(char* slave_ip){
 void serial_test(char* serial_dev){
     int serial_fd;
 
-    serial_fd = open(serial_dev, O_RDWR);
+    serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
     if(serial_fd < 0){
         fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
         exit(-1);
@@ -67,7 +67,7 @@ void pingpong_test(char* option[2]){
     char *serial_dev = option[1];
     struct sockaddr_in s_addr; 
 
-    serial_fd = open(serial_dev, O_RDWR);
+    serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
     if(serial_fd < 0){
         fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
         exit(-1);

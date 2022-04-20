@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
     }
     uart_name = argv[1];
 
-    fd = open(uart_name, O_RDWR);
+    fd = open(uart_name, O_RDWR | O_NONBLOCK);
     if (fd < 0) {
         printf("failed to open %s: %d\n", uart_name, fd);
         return -1;

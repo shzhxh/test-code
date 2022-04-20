@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
     }
 
     // init uart
-    uart = open(serial_name, O_RDWR);
+    uart = open(serial_name, O_RDWR | O_NONBLOCK);
     if (uart < 0)    {
         printf("failed to open %s: %s\n", serial_name, strerror(errno));
         return 1;
