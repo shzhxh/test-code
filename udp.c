@@ -10,7 +10,8 @@ int main()
 {
     int fd;
     struct sockaddr_in sa_to, sa_from;
-    
+    socklen_t size = sizeof sa_to;
+
 	/* read from udp */
     fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -32,7 +33,6 @@ int main()
 
     printf("bind done\n");
 
-    socklen_t size = sizeof sa_to;
     if (getsockname(fd, (void *)&sa_to, &size) < 0)
     {
         printf("failed to getsockname: %s\n", strerror(errno));
@@ -44,7 +44,7 @@ int main()
     char buf[1500];
     while (1)
     {
-        unsigned long len = recvfrom(fd, buf, sizeof buf, 0, (struct sockaddr *) &sa_from, sizeof(sa_from));
+        unsigned long len = recvfrom(fd, buf, sizeof buf, 0, (struct sockaddr *) &sa_from, &size);
         if (len == 1 && *buf == 'e')
         {
             printf("over.\n");

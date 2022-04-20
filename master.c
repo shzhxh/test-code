@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define LEN 256
-char buf[LEN];
+char buf[LEN] = {'a'};
 int loops = 10;
 struct timeval time_start, time_end;
 double sum; // total time
@@ -42,22 +42,55 @@ void net_test(char* slave_ip){
 
     close(udp_fd);
 }
-void serial_test(char* slave_serial){
+void serial_test(char* serial_dev){
     int serial_fd;
 
-    serial_fd = open(slave_serial, O_RDWR);
+    serial_fd = open(serial_dev, O_RDWR);
     if(serial_fd < 0){
-        fprintf(stderr, "failed to open %s: %d\n", slave_serial, serial_fd);
-        return -1;
+        fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
+        exit(-1);
     }
 
     gettimeofday(&time_start, NULL);
+    write(serial_fd, buf, LEN);
     for(int i = 0; i <= loops; i++){
-        write(serial_fd, "a", 1);
-        if(read(serial_fd, buf, LEN) > 0) printf("read: %s", buf);
+        if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
     }
     gettimeofday(&time_end, NULL);
 
+    close(serial_fd);
+}
+
+void pingpong_test(char* option[2]){
+    int serial_fd, udp_fd;
+    char *slave_ip = option[0];
+    char *serial_dev = option[1];
+    struct sockaddr_in s_addr; 
+
+    serial_fd = open(serial_dev, O_RDWR);
+    if(serial_fd < 0){
+        fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
+        exit(-1);
+    }
+
+    udp_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (udp_fd < 0){
+        printf("socket creating error.");
+        exit(1);
+    }
+    s_addr.sin_family = AF_INET;
+    s_addr.sin_port = htons(1234);
+    s_addr.sin_addr.s_addr = inet_addr(slave_ip);
+
+    gettimeofday(&time_start, NULL);
+    for(int i = 0; i <= loops; i++){
+        sendto(udp_fd, "a", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+        if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
+    }
+    gettimeofday(&time_end, NULL);
+    sendto(udp_fd, "e", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+
+    close(udp_fd);
     close(serial_fd);
 }
 
@@ -73,7 +106,7 @@ void usage(void){
     fprintf(stderr, "Usage :\n\
       master -n(et) $slave_ip\n\
       master -s(erial) $serial_dev\n\
-      master -p(ingpong) \n");
+      master -p(ingpong) $slave_ip $serial_dev \n");
     exit(1);
 }
 
@@ -85,9 +118,10 @@ int isoption(char* option, char* test){
 }
 
 int main(int argc, char* argv[]){
-    if(argc != 3) usage();
-    if(isoption(argv[1], "-net")) net_test(argv[2]);
-    if(isoption(argv[1], "-serial")) serial_test(argv[2]);
+    if(argc < 3 || argc > 4) usage();
+    if(argc == 3 && isoption(argv[1], "-net")) net_test(argv[2]);
+    if(argc == 3 && isoption(argv[1], "-serial")) serial_test(argv[2]);
+    if(argc == 4 && isoption(argv[1], "-pingpong")) pingpong_test(argv+2);
 
     print_result();
 }

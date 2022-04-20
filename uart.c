@@ -1,6 +1,7 @@
 ﻿#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 void usage(void){
     fprintf(stderr, "Usage :\n  uart $serial_dev\n");
