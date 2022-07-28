@@ -1,14 +1,15 @@
 CC := musl-gcc
+CROSS_CC := riscv64-linux-musl-gcc
 
 default : master udp uart ping-pong
 
 master : master.c
 	 $(CC) -o $@ $?
 udp : udp.c
-	$(CC) -o $@ $?
+	$(CROSS_CC) -o $@ $?
 uart : uart.c
-	$(CC) -o $@ $?
+	$(CROSS_CC) -o $@ $?
 ping-pong : ping-pong.c
-	$(CC) -o $@ $?
+	$(CROSS_CC) -o $@ $?
 clean :
 	rm -f master udp uart ping-pong
