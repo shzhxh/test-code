@@ -54,7 +54,7 @@ int main()
         {
             buf[len] = '\0';
             printf("received: %s\n", buf);
-            sendto(fd, buf, len, 0, (struct sockaddr*) &sa_from, &size);
+            sendto(fd, buf, len, 0, (struct sockaddr*) &sa_from, sizeof(sa_from));
         }
     }
 }

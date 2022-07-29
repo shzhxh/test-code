@@ -24,7 +24,7 @@ void net_test(char* slave_ip){
     // init udp
     udp_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (udp_fd < 0){
-        printf(stderr, "socket creating error.");
+        fprintf(stderr, "socket creating error.");
         exit(1);
     }
     s_addr.sin_family = AF_INET;
@@ -32,17 +32,19 @@ void net_test(char* slave_ip){
     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
     
     gettimeofday(&time_start, NULL);
-    for(int i = 0; i < loops; i++){
-        sendto(udp_fd, buf[i], 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
-        recv(udp_fd, buf_rcv[i], 1, 0);
-        if (buf[i] != buf_rcv[i]) exit(-1);
-    }
+    sendto(udp_fd, buf, loops, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+    recv(udp_fd, buf_rcv, loops, 0);
     gettimeofday(&time_end, NULL);
+
+    if (strcmp(buf, buf_rcv) == 0){ 
+        printf("UDP test passed\n");
+    }
+
     sendto(udp_fd, '\0', 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
-    printf("UDP test passed\n");
 
     close(udp_fd);
 }
+
 void serial_test(char* serial_dev){
     char buf_rcv[loops];
     int serial_fd;
@@ -64,38 +66,38 @@ void serial_test(char* serial_dev){
     close(serial_fd);
 }
 
-void pingpong_test(char* option[2]){
-    int serial_fd, udp_fd;
-    char *slave_ip = option[0];
-    char *serial_dev = option[1];
-    struct sockaddr_in s_addr; 
+// void pingpong_test(char* option[2]){
+//     int serial_fd, udp_fd;
+//     char *slave_ip = option[0];
+//     char *serial_dev = option[1];
+//     struct sockaddr_in s_addr; 
 
-    serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
-    if(serial_fd < 0){
-        fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
-        exit(-1);
-    }
+//     serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
+//     if(serial_fd < 0){
+//         fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
+//         exit(-1);
+//     }
 
-    udp_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (udp_fd < 0){
-        printf("socket creating error.");
-        exit(1);
-    }
-    s_addr.sin_family = AF_INET;
-    s_addr.sin_port = htons(1234);
-    s_addr.sin_addr.s_addr = inet_addr(slave_ip);
+//     udp_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+//     if (udp_fd < 0){
+//         printf("socket creating error.");
+//         exit(1);
+//     }
+//     s_addr.sin_family = AF_INET;
+//     s_addr.sin_port = htons(1234);
+//     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
 
-    gettimeofday(&time_start, NULL);
-    for(int i = 0; i <= loops; i++){
-        sendto(udp_fd, "a", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
-        if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
-    }
-    gettimeofday(&time_end, NULL);
-    sendto(udp_fd, "e", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+//     gettimeofday(&time_start, NULL);
+//     for(int i = 0; i <= loops; i++){
+//         sendto(udp_fd, "a", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+//         if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
+//     }
+//     gettimeofday(&time_end, NULL);
+//     sendto(udp_fd, "e", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
 
-    close(udp_fd);
-    close(serial_fd);
-}
+//     close(udp_fd);
+//     close(serial_fd);
+// }
 
 void print_result(void){
     sum = (time_end.tv_sec - time_start.tv_sec) * 1000000;
@@ -124,7 +126,7 @@ int main(int argc, char* argv[]){
     if(argc < 3 || argc > 4) usage();
     if(argc == 3 && isoption(argv[1], "-net")) net_test(argv[2]);
     if(argc == 3 && isoption(argv[1], "-serial")) serial_test(argv[2]);
-    if(argc == 4 && isoption(argv[1], "-pingpong")) pingpong_test(argv+2);
+    // if(argc == 4 && isoption(argv[1], "-pingpong")) pingpong_test(argv+2);
 
     print_result();
 }
