@@ -9,8 +9,9 @@
 int main()
 {
     int fd;
+    char buf[256];
     struct sockaddr_in sa_to, sa_from;
-    socklen_t size = sizeof sa_to;
+    socklen_t size = sizeof(sa_to);
 
 	/* read from udp */
     fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -25,7 +26,7 @@ int main()
 
     sa_to.sin_family = AF_INET;
     sa_to.sin_port = htons(1234);
-    if (bind(fd, (void *)&sa_to, sizeof sa_to) < 0)
+    if (bind(fd, (void *)&sa_to, size) < 0)
     {
         printf("failed to bind: %s\n", strerror(errno));
         return 1;
@@ -41,11 +42,10 @@ int main()
 
     printf("socket bind to %d\n", ntohs(sa_to.sin_port));
 
-    char buf[1500];
     while (1)
     {
-        unsigned long len = recvfrom(fd, buf, sizeof buf, 0, (struct sockaddr *) &sa_from, &size);
-        if (len == 1 && *buf == 'e')
+        unsigned long len = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *) &sa_from, &size);
+        if (len == 1 && *buf == '\0')
         {
             printf("over.\n");
             break;
@@ -54,7 +54,7 @@ int main()
         {
             buf[len] = '\0';
             printf("received: %s\n", buf);
-            sendto(fd, buf, len, 0, (struct sockaddr*) &sa_from, sizeof(sa_from));
+            sendto(fd, buf, len, 0, (struct sockaddr*) &sa_from, &size);
         }
     }
 }

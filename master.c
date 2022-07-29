@@ -11,20 +11,20 @@
 #include <string.h>
 #include <unistd.h>
 
-#define LEN 256
-char buf[LEN] = {'a'};
-int loops = 10;
+char* buf = "The quick brown fox jumps over the lazy dog 1234567890";
+int loops = sizeof(buf);
 struct timeval time_start, time_end;
 double sum; // total time
 
 void net_test(char* slave_ip){
+    char buf_rcv[loops];
     int udp_fd; // udp fd
     struct sockaddr_in s_addr; 
 
     // init udp
     udp_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (udp_fd < 0){
-        printf("socket creating error.");
+        printf(stderr, "socket creating error.");
         exit(1);
     }
     s_addr.sin_family = AF_INET;
@@ -32,17 +32,19 @@ void net_test(char* slave_ip){
     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
     
     gettimeofday(&time_start, NULL);
-    for(int i = 0; i <= loops; i++){
-        sendto(udp_fd, "a", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
-        recv(udp_fd, buf, LEN, 0);
-        printf("recv : %s\n", buf);
+    for(int i = 0; i < loops; i++){
+        sendto(udp_fd, buf[i], 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+        recv(udp_fd, buf_rcv[i], 1, 0);
+        if (buf[i] != buf_rcv[i]) exit(-1);
     }
     gettimeofday(&time_end, NULL);
-    sendto(udp_fd, "e", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+    sendto(udp_fd, '\0', 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+    printf("UDP test passed\n");
 
     close(udp_fd);
 }
 void serial_test(char* serial_dev){
+    char buf_rcv[loops];
     int serial_fd;
 
     serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
@@ -52,11 +54,12 @@ void serial_test(char* serial_dev){
     }
 
     gettimeofday(&time_start, NULL);
-    write(serial_fd, buf, LEN);
-    for(int i = 0; i <= loops; i++){
-        if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
-    }
+    write(serial_fd, buf, loops);
+    while(read(serial_fd, buf_rcv, loops) > 0) printf("read: %s\n", buf_rcv);
+    
     gettimeofday(&time_end, NULL);
+    write(serial_fd, '\0', 1);
+    if(strcmp(buf, buf_rcv) == 0) printf("serial port test passed\n");
 
     close(serial_fd);
 }
