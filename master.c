@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 char* buf = "The quick brown fox jumps over the lazy dog 1234567890";
-int loops = sizeof(buf);
+int loops = 1024;
 struct timeval time_start, time_end;
 double sum; // total time
 
@@ -35,12 +35,13 @@ void net_test(char* slave_ip){
     sendto(udp_fd, buf, loops, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
     recv(udp_fd, buf_rcv, loops, 0);
     gettimeofday(&time_end, NULL);
-
+    printf("send:%s recv:%s\n", buf, buf_rcv);
     if (strcmp(buf, buf_rcv) == 0){ 
         printf("UDP test passed\n");
     }
 
-    sendto(udp_fd, '\0', 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+    char stopchar[1] = "\0";
+    sendto(udp_fd, stopchar, 1, 0, (struct sockaddr *)&s_addr, sizeof(struct sockaddr));
 
     close(udp_fd);
 }

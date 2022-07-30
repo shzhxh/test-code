@@ -9,7 +9,7 @@
 int main()
 {
     int fd;
-    char buf[256];
+    char buf[1024];
     struct sockaddr_in sa_to, sa_from;
     socklen_t size = sizeof(sa_to);
 
@@ -44,7 +44,8 @@ int main()
 
     while (1)
     {
-        unsigned long len = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *) &sa_from, &size);
+        memset(buf, 0, sizeof(buf));
+        int len = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *) &sa_from, &size);
         if (len == 1 && *buf == '\0')
         {
             printf("over.\n");
