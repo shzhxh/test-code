@@ -13,7 +13,7 @@
 
 #define LEN 128
 char* buf = "The quick brown fox jumps over the lazy dog 1234567890";
-int loops = 54;
+int iter = 20, loops =0;
 char stopchar[1] = "\1";
 struct timeval time_start, time_end;
 double sum; // total time
@@ -34,7 +34,7 @@ void net_test(char* slave_ip){
     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
     
     gettimeofday(&time_start, NULL);
-    for(int i = 0; i < loops; i++){
+    for(int i = 0; i < iter; i++){
         sendto(udp_fd, buf, LEN, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
         recv(udp_fd, buf_rcv, LEN, 0);
     }
@@ -60,17 +60,19 @@ void serial_test(char* serial_dev){
         exit(-1);
     }
 
-    gettimeofday(&time_start, NULL);
     memset(buf_rcv, 0, LEN);
-    for(int i=0; i<loops; i++){
-        // printf("loop : %d\n", i);
-        memset(buf_tmp, 0, LEN);
+    memset(buf_tmp, 0, LEN);
+    iter = strlen(buf);
+
+    gettimeofday(&time_start, NULL);
+    for(int i=0; i<iter; i++){
         write(serial_fd, buf + i, 1);
         // printf("write: %c\n", buf[i]);
         
-        while(strlen(buf_tmp) < 1){
+        do {
             read(serial_fd, buf_tmp, 1);
-        }
+            loops++;
+        } while(strlen(buf_tmp) < 1);
         memcpy(buf_rcv + i, buf_tmp, 1);
     }
     gettimeofday(&time_end, NULL);
@@ -104,7 +106,7 @@ void serial_test(char* serial_dev){
 //     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
 
 //     gettimeofday(&time_start, NULL);
-//     for(int i = 0; i <= loops; i++){
+//     for(int i = 0; i <= iter; i++){
 //         sendto(udp_fd, "a", 1, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
 //         if(read(serial_fd, buf, LEN) > 0) printf("read: %s\n", buf);
 //     }
@@ -119,8 +121,8 @@ void print_result(void){
     sum = (time_end.tv_sec - time_start.tv_sec) * 1000000;
     // printf("total sec : %f\n", sum);
     sum += (time_end.tv_usec - time_start.tv_usec);
-    printf("total usec : %f\n", sum);
-    printf("avg time(us) : %f\n", sum/loops); 
+    // printf("total usec : %f\n", sum);
+    printf("avg time(us) : %f\n", sum/2/(iter + loops)); 
 }
 
 void usage(void){

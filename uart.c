@@ -14,7 +14,6 @@ int main(int argc, char* argv[]){
     char *uart_name;
     int fd, len, pos;
     char buf_rcv[128];
-    char buf_send[128];
 
     if (argc != 2){
         usage();
@@ -37,5 +36,5 @@ int main(int argc, char* argv[]){
         write(fd, buf_rcv, 1);
         // printf("write : %s\n", buf_send);
     }
-    
+    close(fd);
 }
