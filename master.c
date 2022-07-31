@@ -11,13 +11,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#define LEN 128
 char* buf = "The quick brown fox jumps over the lazy dog 1234567890";
-int loops = 1024;
+int loops = 54;
+char stopchar[1] = "\1";
 struct timeval time_start, time_end;
 double sum; // total time
 
 void net_test(char* slave_ip){
-    char buf_rcv[loops];
+    char buf_rcv[LEN];
     int udp_fd; // udp fd
     struct sockaddr_in s_addr; 
 
@@ -32,36 +34,49 @@ void net_test(char* slave_ip){
     s_addr.sin_addr.s_addr = inet_addr(slave_ip);
     
     gettimeofday(&time_start, NULL);
-    sendto(udp_fd, buf, loops, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
-    recv(udp_fd, buf_rcv, loops, 0);
+    for(int i = 0; i < loops; i++){
+        sendto(udp_fd, buf, LEN, 0, (struct sockaddr*) &s_addr, sizeof(struct sockaddr));
+        recv(udp_fd, buf_rcv, LEN, 0);
+    }
     gettimeofday(&time_end, NULL);
-    printf("send:%s recv:%s\n", buf, buf_rcv);
+    printf("send:%s \nrecv:%s\n", buf, buf_rcv);
     if (strcmp(buf, buf_rcv) == 0){ 
         printf("UDP test passed\n");
     }
 
-    char stopchar[1] = "\0";
     sendto(udp_fd, stopchar, 1, 0, (struct sockaddr *)&s_addr, sizeof(struct sockaddr));
 
     close(udp_fd);
 }
 
 void serial_test(char* serial_dev){
-    char buf_rcv[loops];
+    char buf_rcv[LEN];
+    char buf_tmp[LEN];
     int serial_fd;
 
-    serial_fd = open(serial_dev, O_RDWR | O_NONBLOCK);
+    serial_fd = open(serial_dev, O_RDWR);
     if(serial_fd < 0){
         fprintf(stderr, "failed to open %s: %d\n", serial_dev, serial_fd);
         exit(-1);
     }
 
     gettimeofday(&time_start, NULL);
-    write(serial_fd, buf, loops);
-    while(read(serial_fd, buf_rcv, loops) > 0) printf("read: %s\n", buf_rcv);
-    
+    memset(buf_rcv, 0, LEN);
+    for(int i=0; i<loops; i++){
+        // printf("loop : %d\n", i);
+        memset(buf_tmp, 0, LEN);
+        write(serial_fd, buf + i, 1);
+        // printf("write: %c\n", buf[i]);
+        
+        while(strlen(buf_tmp) < 1){
+            read(serial_fd, buf_tmp, 1);
+        }
+        memcpy(buf_rcv + i, buf_tmp, 1);
+    }
     gettimeofday(&time_end, NULL);
-    write(serial_fd, '\0', 1);
+
+    write(serial_fd, stopchar, 1);
+    printf("send:%s\nrecv:%s\n", buf, buf_rcv);
     if(strcmp(buf, buf_rcv) == 0) printf("serial port test passed\n");
 
     close(serial_fd);
@@ -102,7 +117,7 @@ void serial_test(char* serial_dev){
 
 void print_result(void){
     sum = (time_end.tv_sec - time_start.tv_sec) * 1000000;
-    printf("total sec : %f\n", sum);
+    // printf("total sec : %f\n", sum);
     sum += (time_end.tv_usec - time_start.tv_usec);
     printf("total usec : %f\n", sum);
     printf("avg time(us) : %f\n", sum/loops); 
@@ -124,10 +139,9 @@ int isoption(char* option, char* test){
 }
 
 int main(int argc, char* argv[]){
-    if(argc < 3 || argc > 4) usage();
     if(argc == 3 && isoption(argv[1], "-net")) net_test(argv[2]);
-    if(argc == 3 && isoption(argv[1], "-serial")) serial_test(argv[2]);
+    else if(argc == 3 && isoption(argv[1], "-serial")) serial_test(argv[2]);
     // if(argc == 4 && isoption(argv[1], "-pingpong")) pingpong_test(argv+2);
-
+    else usage();
     print_result();
 }

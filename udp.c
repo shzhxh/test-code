@@ -46,7 +46,7 @@ int main()
     {
         memset(buf, 0, sizeof(buf));
         int len = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *) &sa_from, &size);
-        if (len == 1 && *buf == '\0')
+        if (len == 1 && *buf == '\1')
         {
             printf("over.\n");
             break;
@@ -54,7 +54,7 @@ int main()
         else if (len > 0)
         {
             buf[len] = '\0';
-            printf("received: %s\n", buf);
+            // printf("received: %s\n", buf);
             sendto(fd, buf, len, 0, (struct sockaddr*) &sa_from, sizeof(sa_from));
         }
     }

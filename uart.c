@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 void usage(void){
     fprintf(stderr, "Usage :\n  uart $serial_dev\n");
@@ -11,8 +12,9 @@ void usage(void){
 /* read from uart, write to uart */
 int main(int argc, char* argv[]){
     char *uart_name;
-    int fd; // uart fd
-    char buf[256];
+    int fd, len, pos;
+    char buf_rcv[128];
+    char buf_send[128];
 
     if (argc != 2){
         usage();
@@ -27,35 +29,13 @@ int main(int argc, char* argv[]){
     
     while (1)
     {
-        unsigned long len = read(fd, buf, sizeof(buf));
-        if (len > 0)
-        {
-            for (int i = 0; i < len; ++i)
-            {
-                if ('a' <= buf[i] && buf[i] <= 'z')
-                {
-                    buf[i] -= 'a';
-                    buf[i] += 'A';
-                }
-                else if ('A' <= buf[i] && buf[i] <= 'Z')
-                {
-                    buf[i] -= 'A';
-                    buf[i] += 'a';
-                }
-                else if ('0' <= buf[i] && buf[i] <= '9')
-                {
-                    buf[i] = '9' - (buf[i] - '0');
-                }
-                else
-                {
-                    printf("serial closed\n");
-                    close(fd);
-                    return 0;
-                }
-                write(fd, buf + i, 1);
-                printf("write: %c\n", buf[i]);
-            }
+        memset(buf_rcv, 0, 128);
+        while(strlen(buf_rcv) < 1){
+            read(fd, buf_rcv, 1);
         }
+        if(buf_rcv[0] == '\1') break;
+        write(fd, buf_rcv, 1);
+        // printf("write : %s\n", buf_send);
     }
     
 }
